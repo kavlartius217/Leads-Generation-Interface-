@@ -1,0 +1,7 @@
+# requirements.txt
+
+streamlit
+crewai
+crewai_tools
+exa_py
+openai
