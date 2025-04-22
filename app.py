@@ -1,6 +1,3 @@
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 import streamlit as st
 import os
 import time
@@ -133,7 +130,7 @@ with col1:
 
 with col2:
     st.header("How It Works")
-    st.image("https://via.placeholder.com/400x200?text=Lead+Synapse+Workflow", use_column_width=True)
+    st.image("https://via.placeholder.com/400x200?text=Lead+Synapse+Workflow", use_container_width=True)
     
     st.markdown("""
     1. **Company Discovery**: Our AI agent identifies relevant companies based on your criteria
@@ -206,7 +203,7 @@ def run_lead_synapse(domain, area, company_count=15, contacts_per_company=3):
     
     linkedin_agent = Agent(
         role="LinkedIn Prospector",
-        goal=f"Find {contacts_per_company} professional profiles from each identified company",
+        goal=f"Find {contacts_per_company} professional profiles from EACH company identified by the company finder agent",
         backstory="An expert in finding people on LinkedIn, able to search and extract names and profile URLs using web and semantic search tools.",
         tools=[search_and_get_contents_tool],
         memory=True,
@@ -243,9 +240,9 @@ def run_lead_synapse(domain, area, company_count=15, contacts_per_company=3):
     
     linkedin_task = Task(
         description=(
-            "For each company identified by the company_finder_task, research and identify key decision-makers "
-            "who would be ideal contacts for business development outreach. Focus on executives with authority to "
-            "make partnership or purchasing decisions.\n\n"
+            "For EACH AND EVERY company identified by the company_finder_task, research and identify key decision-makers "
+            "who would be ideal contacts for business development outreach. Do not skip any companies. Make sure to find contacts "
+            "for all companies in the list. Focus on executives with authority to make partnership or purchasing decisions.\n\n"
             "Target roles should include: Founder, CEO, CTO, COO, CMO, VP/Director/Head of Business Development, "
             "Partnerships, Product, Sales, Marketing, or Growth. Verify that each person currently works at the company "
             "based on their LinkedIn profile information.\n\n"
@@ -268,7 +265,8 @@ def run_lead_synapse(domain, area, company_count=15, contacts_per_company=3):
             f"4. Use bold formatting for company names (with ** not as headers with #)\n"
             f"5. Insert one blank line between each person's entry and two blank lines between companies\n"
             f"6. Do not use any other markdown formatting elements like headers, bullet points, or code blocks\n"
-            f"7. Include {contacts_per_company} contacts per company (not more, not less)"
+            f"7. Include {contacts_per_company} contacts per company (not more, not less)\n"
+            f"8. IMPORTANT: Make sure to include contacts for ALL companies identified in the first task"
         ),
         agent=linkedin_agent,
         context=[company_finder_task]
@@ -322,7 +320,8 @@ if start_button:
                         "Download Companies List",
                         companies_text,
                         file_name="companies.md",
-                        mime="text/markdown"
+                        mime="text/markdown",
+                        use_container_width=True
                     )
                 
                 with tabs[1]:  # Contacts tab
@@ -331,7 +330,8 @@ if start_button:
                         "Download Contacts List",
                         contacts_text,
                         file_name="people.md",
-                        mime="text/markdown"
+                        mime="text/markdown",
+                        use_container_width=True
                     )
                 
                 with tabs[2]:  # Combined report tab
@@ -344,7 +344,8 @@ if start_button:
                         "Download Full Report (Markdown)",
                         combined_report,
                         file_name="lead_synapse_report.md",
-                        mime="text/markdown"
+                        mime="text/markdown",
+                        use_container_width=True
                     )
                     
                     st.write("Note: For Excel export functionality, additional parsing would be required.")
