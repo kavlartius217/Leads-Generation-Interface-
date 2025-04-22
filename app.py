@@ -76,7 +76,7 @@ def search_and_get_contents_tool(question: str) -> str:
             # --- SPEED OPTIMIZATION: Reduced number of results requested ---
             # Original was 30. Reducing to 10 should be sufficient to find
             # 2-3 contacts per company, significantly speeding up this tool call.
-            num_results=10,
+            num_results=15,
             # --- End Optimization ---
             highlights=True
         )
