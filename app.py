@@ -26,19 +26,25 @@ llm_openai = LLM(model='openai/gpt-4o-mini', temperature=0)
 # Tools
 @tool("Exa search and get contents")
 def search_and_get_contents_tool(question: str) -> str:
-    exa = Exa(os.getenv("EXA_API_KEY"))
+    """Tool using Exa's Python SDK to run semantic search and return result highlights."""
+
+    exa = Exa(exa_api_key)
+
     response = exa.search_and_contents(
         query=question,
         type="neural",
         num_results=30,
         highlights=True
     )
-    return '\n\n'.join([
+
+    parsedResult = '\n\n'.join([
         f"<Title id={idx}>{result.title}</Title>\n"
         f"<URL id={idx}>{result.url}</URL>\n"
         f"<Highlight id={idx}>{' | '.join(result.highlights)}</Highlight>"
         for idx, result in enumerate(response.results)
     ])
+
+    return parsedResult
 
 serper_dev_tool = SerperDevTool()
 
