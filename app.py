@@ -75,16 +75,6 @@ with st.sidebar:
     
     temperature = st.slider("Temperature", 0.0, 1.0, 0.1, 0.1)
     
-    st.markdown("---")
-    
-    # Process configuration
-    st.subheader("Process Settings")
-    process_type = st.radio(
-        "Task Execution Process",
-        ["Sequential", "Parallel"],
-        index=0,
-        help="Sequential: Tasks run one after another. Parallel: Tasks run simultaneously when possible."
-    )
     
     st.markdown("---")
     
