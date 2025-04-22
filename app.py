@@ -170,15 +170,16 @@ linkedin_task = Task(
         "**Next Company Name**\n\n"
         "- [Full Name](LinkedIn_URL) - Current Role\n"
         "- [Full Name](LinkedIn_URL) - Current Role\n\n"
-        "Requirements:\n"
-        "1. Include ONLY people with verified current employment at the company\n"
-        "2. Format LinkedIn URLs as clickable markdown links with the person's name as the anchor text\n"
-        "3. Ensure all LinkedIn URLs are valid and direct to the specific profile\n"
-        "4. Use bold formatting for company names (with ** not as headers with #)\n"
-        "5. Insert one blank line between each person's entry and two blank lines between companies\n"
-        "6. Do not use any other markdown formatting elements like headers, bullet points, or code blocks\n"
-        "7. Include 2-3 contacts per company (not more, not less)"
-    ),
+        "Requirements:\\n"
+"1. Include ONLY people with verified current employment at the company\\n"
+"2. Format LinkedIn URLs as clickable markdown links with the person's name as the anchor text\\n"
+"3. Ensure all LinkedIn URLs are valid and direct to the specific profile\\n"
+"4. Use bold formatting for company names (with ** not as headers with #)\\n"
+"5. Insert one blank line between each person's entry and two blank lines between companies\\n"
+"6. Do not use any other markdown formatting elements like headers, bullet points, or code blocks\\n"
+"7. Include 2-3 contacts per company (not more, not less)\\n"
+"8. Do not skip any company from the list\\n"
+),
     agent=linkedin_agent,
     context=[company_finder_task],
     output_file="people.md"
