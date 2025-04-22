@@ -98,7 +98,7 @@ company_finder_task = Task(
 )
 
 linkedin_task = Task(
-    description=(
+   description=(
         "For each company identified by the company_finder_task, research and identify 2-3 key decision-makers "
         "who would be ideal contacts for business development outreach. Focus on executives with authority to "
         "make partnership or purchasing decisions.\n\n"
@@ -108,6 +108,7 @@ linkedin_task = Task(
         "For companies with fewer than 50 employees, prioritize C-level executives. For larger companies, "
         "focus on department heads or directors most relevant to your specific offering."
     ),
+    
     expected_output=(
         "A markdown file named `people.md` with the following structure:\n\n"
         "**Company Name**\n\n"
@@ -117,6 +118,16 @@ linkedin_task = Task(
         "**Next Company Name**\n\n"
         "- [Full Name](LinkedIn_URL) - Current Role\n"
         "- [Full Name](LinkedIn_URL) - Current Role\n\n"
+        
+        "Requirements:\\n"
+        "1. Include ONLY people with verified current employment at the company\\n"
+        "2. Format LinkedIn URLs as clickable markdown links with the person's name as the anchor text\\n"
+        "3. Ensure all LinkedIn URLs are valid and direct to the specific profile\\n"
+        "4. Use bold formatting for company names (with ** not as headers with #)\\n"
+        "5. Insert one blank line between each person's entry and two blank lines between companies\\n"
+        "6. Do not use any other markdown formatting elements like headers, bullet points, or code blocks\\n"
+        "7. Include 2-3 contacts per company (not more, not less)\\n"
+        "8. Do not skip any company from the list\\n"
     ),
     agent=linkedin_agent,
     context=[company_finder_task],
