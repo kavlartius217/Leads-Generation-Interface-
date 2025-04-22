@@ -1,6 +1,7 @@
 __import__('pysqlite3')
 import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+# -*- coding: utf-8 -*-
 import streamlit as st
 import os
 import traceback
@@ -15,12 +16,10 @@ st.title("🚀 Lead Synapse Mark III")
 st.markdown("Automated Lead Generation using AI Agents. Enter the domain and area, then click 'Generate Leads'.")
 
 # --- API Key Handling using st.secrets ---
-# Function to load keys and check availability
 def load_api_keys():
+    # ... (Keep the load_api_keys function exactly as before) ...
     keys = {}
-    # Define required keys based on the original script's usage
     required_keys = ["SERPER_API_KEY", "EXA_API_KEY", "OPENAI_API_KEY"]
-    # Include GROQ if it might be needed, even if not explicitly used in current LLM/tool setup
     optional_keys = ["GROQ_API_KEY"]
     missing_keys = []
 
@@ -35,69 +34,72 @@ def load_api_keys():
             keys[key_name] = st.secrets[key_name]
          except KeyError:
             st.warning(f"Optional API key '{key_name}' not found in st.secrets.")
-            keys[key_name] = None # Assign None if optional key is missing
+            keys[key_name] = None
 
     return keys, missing_keys
 
 api_keys, missing = load_api_keys()
 
-# Halt execution if required keys are missing
 if missing:
     st.error(f"Missing required API keys in st.secrets: {', '.join(missing)}. "
              "Please add them to your `.streamlit/secrets.toml` file and restart the app.")
     st.stop()
 else:
     st.sidebar.success("API Keys loaded successfully!")
-    # Set environment variables - some CrewAI tools might still rely on them
-    # It's good practice to set them even if passing keys directly where possible
     os.environ['SERPER_API_KEY'] = api_keys["SERPER_API_KEY"]
     os.environ['EXA_API_KEY'] = api_keys["EXA_API_KEY"]
     os.environ['OPENAI_API_KEY'] = api_keys["OPENAI_API_KEY"]
-    if api_keys.get("GROQ_API_KEY"): # Set only if it exists
+    if api_keys.get("GROQ_API_KEY"):
       os.environ['GROQ_API_KEY'] = api_keys["GROQ_API_KEY"]
 
-    # Store keys for direct use where possible
     openai_api_key = api_keys["OPENAI_API_KEY"]
     exa_api_key = api_keys["EXA_API_KEY"]
 
-
 # --- CrewAI Components Definition ---
-# Define components within functions to ensure they are re-instantiated if needed,
-# although for this setup, defining them globally after key check is fine.
 
-# LLM Configuration
-# Pass API key directly for better practice where supported
+# LLM Configuration (Using the same fast model as before)
 llm_openai = LLM(model='openai/gpt-4o-mini', temperature=0, api_key=openai_api_key)
+# Consider uncommenting below if you have a Groq key and want to test its speed
+# from crewai_groq import GroqLLM
+# llm_groq = GroqLLM(api_key=api_keys.get("GROQ_API_KEY"), model='llama3-8b-8192')
+# llm_to_use = llm_openai # or llm_groq
 
-# Exa Tool Definition
+# Exa Tool Definition - OPTIMIZED
 @tool("Exa search and get contents")
 def search_and_get_contents_tool(question: str) -> str:
     """Tool using Exa's Python SDK to run semantic search and return result highlights."""
     try:
-        # Pass API key directly during Exa client instantiation
         exa = Exa(exa_api_key)
         response = exa.search_and_contents(
             query=question,
             type="neural",
-            num_results=30, # Keeping original number, adjust if needed
+            # --- SPEED OPTIMIZATION: Reduced number of results requested ---
+            # Original was 30. Reducing to 10 should be sufficient to find
+            # 2-3 contacts per company, significantly speeding up this tool call.
+            num_results=10,
+            # --- End Optimization ---
             highlights=True
         )
+        # Limit highlights length slightly if needed (optional)
         parsedResult = '\n\n'.join([
             f"<Title id={idx}>{result.title}</Title>\n"
             f"<URL id={idx}>{result.url}</URL>\n"
+            # Example: Limit highlights displayed/processed if they are excessively long
+            # f"<Highlight id={idx}>{' | '.join(h[:500] for h in result.highlights)}</Highlight>"
             f"<Highlight id={idx}>{' | '.join(result.highlights)}</Highlight>"
             for idx, result in enumerate(response.results)
         ])
         return parsedResult
     except Exception as e:
-        return f"Error during Exa search: {e}"
+        st.warning(f"Exa search tool encountered an error: {e}") # Show warning in UI
+        return f"Error during Exa search: {e}" # Return error string to agent
 
 exa_tools = search_and_get_contents_tool
 
-# Serper Tool Definition (relies on environment variable set earlier)
+# Serper Tool Definition
 serper_dev_tool = SerperDevTool()
 
-# Agent Definitions (Identical roles, goals, backstories as original)
+# Agent Definitions (Keep verbose=False for speed)
 company_finder_agent = Agent(
     role="Company Discovery Specialist",
     goal="Identify and extract a relevant list of companies based on a specific industry domain and geographic area for business development outreach.",
@@ -107,8 +109,8 @@ company_finder_agent = Agent(
         "Your output should be relevant, well-structured, and useful for the business development team to begin outreach."
     ),
     memory=True,
-    verbose=False, # Keep verbose False for cleaner Streamlit UI, check console if needed
-    llm=llm_openai,
+    verbose=False, # Keep False for speed
+    llm=llm_openai, # Use the chosen LLM
     tools=[serper_dev_tool],
     allow_delegation=False
 )
@@ -119,13 +121,12 @@ linkedin_agent = Agent(
     backstory="An expert in finding people on LinkedIn, able to search and extract names and profile URLs using web and semantic search tools.",
     tools=[exa_tools],
     memory=True,
-    llm=llm_openai,
-    verbose=False, # Keep verbose False
+    llm=llm_openai, # Use the chosen LLM
+    verbose=False, # Keep False for speed
     allow_delegation=False
 )
 
-# Task Definitions (Identical descriptions, expected outputs as original)
-# Output files will be created in the directory where streamlit runs the script.
+# Task Definitions (Instructions unchanged)
 company_finder_task = Task(
     description=(
         "Use online tools to find and extract a comprehensive list of companies that operate in the **{domain}** domain "
@@ -146,7 +147,7 @@ company_finder_task = Task(
         "The file should be structured with headings and bullet points for easy reading by the business development team."
     ),
     agent=company_finder_agent,
-    output_file="companies.md" # CrewAI will create this file
+    output_file="companies.md"
 )
 
 linkedin_task = Task(
@@ -179,8 +180,8 @@ linkedin_task = Task(
         "7. Include 2-3 contacts per company (not more, not less)"
     ),
     agent=linkedin_agent,
-    context=[company_finder_task], # Depends on the output of the first task
-    output_file="people.md" # CrewAI will create this file
+    context=[company_finder_task],
+    output_file="people.md"
 )
 
 # --- Streamlit User Interface Elements ---
@@ -188,7 +189,6 @@ st.sidebar.header("Lead Generation Inputs")
 domain_input = st.sidebar.text_input("Target Industry Domain:", "Healthcare Technology")
 area_input = st.sidebar.text_input("Target Geographic Area:", "New York City")
 
-# Placeholders for results
 col1, col2 = st.columns(2)
 with col1:
     st.subheader("🏢 Found Companies")
@@ -199,13 +199,11 @@ with col2:
     people_placeholder = st.empty()
     people_placeholder.markdown("*(Results will appear here after generation)*")
 
-# Button to trigger the CrewAI process
 if st.sidebar.button("✨ Generate Leads"):
     if not domain_input or not area_input:
         st.sidebar.warning("Please enter both Domain and Area.")
     else:
         st.sidebar.info("Initializing Crew...")
-        # Clear previous results before starting
         companies_placeholder.info("🔄 Task 1: Finding companies...")
         people_placeholder.markdown("*(Waiting for company list...)*")
 
@@ -214,21 +212,18 @@ if st.sidebar.button("✨ Generate Leads"):
             lead_synapse_crew = Crew(
                 agents=[company_finder_agent, linkedin_agent],
                 tasks=[company_finder_task, linkedin_task],
-                process=Process.sequential # Explicitly define sequential process
-                # verbose=2 # Uncomment for detailed console logging for debugging
+                process=Process.sequential,
+                # Keep verbose off for speed in production
+                # verbose=2 # Uncomment ONLY for deep debugging
             )
 
-            # Prepare inputs for the kickoff
             inputs = {"area": area_input, "domain": domain_input}
 
-            # Kickoff the crew execution
             st.sidebar.info("🚀 Kicking off the Crew... This might take a few minutes.")
             status_indicator = st.sidebar.empty()
             status_indicator.write("⏳ Agents are working...")
 
             with st.spinner("Processing... Task 1 (Companies) -> Task 2 (Contacts)"):
-                # Execute the crew
-                # The result variable might contain raw outputs, but we rely on file outputs
                 crew_result = lead_synapse_crew.kickoff(inputs=inputs)
 
             status_indicator.write("✅ Crew finished!")
@@ -241,24 +236,29 @@ if st.sidebar.button("✨ Generate Leads"):
                 with open("companies.md", "r", encoding="utf-8") as f:
                     companies_md = f.read()
                 companies_placeholder.markdown(companies_md)
-                people_placeholder.info("🔄 Task 2: Finding contacts...") # Update status as Task 1 finished
+                people_placeholder.info("🔄 Task 2: Finding contacts...")
                 results_displayed = True
             except FileNotFoundError:
                 companies_placeholder.error("❌ Error: `companies.md` file not found. Task 1 might have failed.")
-                people_placeholder.empty() # Clear people placeholder if companies failed
+                people_placeholder.empty()
 
-            # Display People (only if companies file was found)
-            if os.path.exists("companies.md"):
+            # Display People
+            if os.path.exists("companies.md"): # Check if first task succeeded
                 try:
+                    # Add a small delay in case file writing takes a moment
+                    # import time
+                    # time.sleep(1)
                     with open("people.md", "r", encoding="utf-8") as f:
                         people_md = f.read()
                     people_placeholder.markdown(people_md)
                     results_displayed = True
                 except FileNotFoundError:
                      people_placeholder.error("❌ Error: `people.md` file not found. Task 2 might have failed or produced no output.")
+                except Exception as read_err: # Catch other potential read errors
+                    people_placeholder.error(f"❌ Error reading `people.md`: {read_err}")
 
-            # Display the raw result from kickoff if files weren't generated (for debugging)
-            if not results_displayed:
+
+            if not results_displayed and crew_result:
                  st.subheader("Raw Crew Output (Debug Info)")
                  st.write(crew_result)
 
@@ -267,10 +267,9 @@ if st.sidebar.button("✨ Generate Leads"):
             st.sidebar.error("An error occurred during the CrewAI process.")
             st.error(f"Error details: {e}")
             st.error(f"Traceback:\n```\n{traceback.format_exc()}\n```")
-            # Clear placeholders on error
             companies_placeholder.error("Failed to generate company list due to an error.")
             people_placeholder.error("Failed to generate contact list due to an error.")
-            if 'status_indicator' in locals(): # Check if status indicator exists
+            if 'status_indicator' in locals():
                  status_indicator.write("❌ Error occurred.")
 
 st.sidebar.markdown("---")
