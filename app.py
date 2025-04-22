@@ -116,7 +116,7 @@ with col1:
 
 with col2:
     st.header("How It Works")
-    st.image("https://via.placeholder.com/400x200?text=Lead+Synapse+Workflow", use_container_width=True)
+    st.image("https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.freepik.com%2Ffree-photos-vectors%2Fleads&psig=AOvVaw1KBxEDeJl_Ks925ng1Qgn_&ust=1745400576135000&source=images&cd=vfe&opi=89978449&ved=0CBEQjRxqFwoTCMDwwv2p64wDFQAAAAAdAAAAABAE", use_container_width=True)
     
     st.markdown("""
     1. **Company Discovery**: Our AI agent identifies relevant companies based on your criteria
