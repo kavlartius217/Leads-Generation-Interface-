@@ -109,7 +109,9 @@ with col2:
     st.markdown("""
     **Process Flow:**
       🔍 Find Companies
+      
       👥 Find Decision-Makers
+      
       📊 Generate Report
 """)
     
