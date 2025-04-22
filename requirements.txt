@@ -5,3 +5,4 @@ crewai
 crewai_tools
 exa_py
 openai
+pysqlite3-binary
