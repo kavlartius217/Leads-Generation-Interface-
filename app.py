@@ -59,33 +59,19 @@ with st.sidebar:
     api_keys_status = {
         "Serper API": "✅ Configured" if "SERPER_API_KEY" in st.secrets else "❌ Missing",
         "Exa API": "✅ Configured" if "EXA_API_KEY" in st.secrets else "❌ Missing",
-        "OpenAI API": "✅ Configured" if "OPENAI_API_KEY" in st.secrets else "❌ Missing",
-        "Groq API": "✅ Configured" if "GROQ_API_KEY" in st.secrets else "❌ Missing"
+        "OpenAI API": "✅ Configured" if "OPENAI_API_KEY" in st.secrets else "❌ Missing"
     }
     
     for key, status in api_keys_status.items():
         st.text(f"{key}: {status}")
     
-    # LLM selection
-    st.subheader("LLM Selection")
-    llm_option = st.selectbox(
-        "Select LLM provider",
-        ["OpenAI", "Groq"],
+    # OpenAI model selection
+    st.subheader("OpenAI Model Selection")
+    model_option = st.selectbox(
+        "Select Model",
+        ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo"],
         index=0
     )
-    
-    if llm_option == "OpenAI":
-        model_option = st.selectbox(
-            "Select OpenAI Model",
-            ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo"],
-            index=0
-        )
-    else:  # Groq
-        model_option = st.selectbox(
-            "Select Groq Model",
-            ["llama3-8b-8192", "llama3-70b-8192", "mixtral-8x7b-32768"],
-            index=1
-        )
     
     temperature = st.slider("Temperature", 0.0, 1.0, 0.1, 0.1)
     
@@ -144,7 +130,6 @@ def run_lead_synapse(domain, area, company_count=15, contacts_per_company=3):
     os.environ['SERPER_API_KEY'] = st.secrets["SERPER_API_KEY"]
     os.environ['EXA_API_KEY'] = st.secrets["EXA_API_KEY"]
     os.environ['OPENAI_API_KEY'] = st.secrets["OPENAI_API_KEY"]
-    os.environ['GROQ_API_KEY'] = st.secrets.get("GROQ_API_KEY", "")  # Optional
     
     # Progress tracking
     progress = st.progress(0)
@@ -152,10 +137,7 @@ def run_lead_synapse(domain, area, company_count=15, contacts_per_company=3):
     status_container.info("Initializing Lead Synapse...")
     
     # Configure LLM
-    if llm_option == "OpenAI":
-        llm = LLM(model=f'openai/{model_option}', temperature=temperature)
-    else:  # Groq
-        llm = LLM(model=f'groq/{model_option}', temperature=temperature)
+    llm = LLM(model=f'openai/{model_option}', temperature=temperature)
     
     # Tools configuration
     serper_dev_tool = SerperDevTool()
@@ -235,7 +217,8 @@ def run_lead_synapse(domain, area, company_count=15, contacts_per_company=3):
             "Each entry should include the company name, description, website, and any additional available metadata like location or contact info. "
             "The file should be structured with headings and bullet points for easy reading by the business development team."
         ),
-        agent=company_finder_agent
+        agent=company_finder_agent,
+        output_file="companies.md"
     )
     
     linkedin_task = Task(
@@ -269,7 +252,8 @@ def run_lead_synapse(domain, area, company_count=15, contacts_per_company=3):
             f"8. IMPORTANT: Make sure to include contacts for ALL companies identified in the first task"
         ),
         agent=linkedin_agent,
-        context=[company_finder_task]
+        context=[company_finder_task],
+        output_file="people.md"
     )
     
     # Create crew with appropriate process type
@@ -305,11 +289,20 @@ if start_button:
         
         with st.spinner("Generating leads... This may take several minutes."):
             try:
-                results = run_lead_synapse(domain, area, company_count, contacts_per_company)
+                result = run_lead_synapse(domain, area, company_count, contacts_per_company)
                 
-                # Split results into company list and contacts
-                companies_text = results.get("company_finder_task", "No company data generated.")
-                contacts_text = results.get("linkedin_task", "No contact data generated.")
+                # Read the output files created by the tasks
+                try:
+                    with open("companies.md", "r") as f:
+                        companies_text = f.read()
+                except FileNotFoundError:
+                    companies_text = "No company data generated."
+                
+                try:
+                    with open("people.md", "r") as f:
+                        contacts_text = f.read()
+                except FileNotFoundError:
+                    contacts_text = "No contact data generated."
                 
                 # Display in tabs
                 with tabs[0]:  # Companies tab
