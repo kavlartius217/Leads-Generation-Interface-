@@ -108,9 +108,9 @@ with col2:
     st.header("How It Works")
     st.markdown("""
     **Process Flow:**
-     1. 🔍 Find Companies
-     2. 👥 Find Decision-Makers
-     3. 📊 Generate Report
+      🔍 Find Companies
+      👥 Find Decision-Makers
+      📊 Generate Report
 """)
     
     st.markdown("""
