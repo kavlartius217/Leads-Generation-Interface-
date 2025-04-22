@@ -273,11 +273,9 @@ def run_lead_synapse(domain, area, company_count=15, contacts_per_company=3):
     )
     
     # Create crew with appropriate process type
-    process = Process.sequential if process_type == "Sequential" else Process.hierarchical
     lead_synapse_crew = Crew(
         agents=[company_finder_agent, linkedin_agent],
         tasks=[company_finder_task, linkedin_task],
-        process=process,
         verbose=True
     )
     
