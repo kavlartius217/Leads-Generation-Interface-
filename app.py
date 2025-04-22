@@ -278,7 +278,7 @@ def run_lead_synapse(domain, area, company_count=15, contacts_per_company=3):
         agents=[company_finder_agent, linkedin_agent],
         tasks=[company_finder_task, linkedin_task],
         process=process,
-        verbose=2
+        verbose=True
     )
     
     # Update progress
